@@ -36,6 +36,7 @@ function Player(name, marker) {
 }
 
 const GameController = (function () {
+  const player1Input = document.querySelector("#player1").value.trim().toUpper;
   const player1 = Player("John", "O");
   const player2 = Player("Doe", "X");
   let currentPlayer = player1;
@@ -52,6 +53,7 @@ const GameController = (function () {
   };
 
   const playRound = (row, column) => {
+    let isValidMove = true;
     if (!isGameOver) {
       console.log(`${currentPlayer.name} has just played. next...`);
       const marked = Gameboard.placeMarker(row, column, currentPlayer.marker);
@@ -68,9 +70,14 @@ const GameController = (function () {
           switchTurn();
         }
       } else {
+        isValidMove = false;
         console.log(`${row}X${column} cell already occupied.`);
       }
     }
+
+    DisplayController.renderBoard();
+
+    return isValidMove;
   };
 
   const checkForWin = () => {
@@ -110,6 +117,8 @@ const GameController = (function () {
         board[0][2] === marker)
     ) {
       return `${currentPlayer.name} Won! (diagonal)`;
+    } else {
+      return false;
     }
   };
 
@@ -135,3 +144,47 @@ const GameController = (function () {
 
   return { startGame, playRound };
 })();
+
+const DisplayController = (function () {
+  const boardContainer = document.querySelector("#gameBoard");
+  // boardContainer.addEventListener
+  const st = "al";
+
+  const board = Gameboard.getBoard();
+  const renderBoard = () => {
+    boardContainer.innerHTML = "";
+    for (let i = 0; i < board.length; i++) {
+      for (let j = 0; j < board[i].length; j++) {
+        const div = document.createElement("div");
+        div.textContent = board[i][j];
+        div.dataset.row = i; // does the same thing as: div.setAttribute("data-row", i);
+        div.dataset.column = j;
+        boardContainer.appendChild(div);
+      }
+    }
+
+    addCellListeners();
+  };
+
+  function handleCellClick(evt) {
+    const row = evt.target.dataset.row;
+    const column = evt.target.dataset.column;
+    const play = GameController.playRound(row, column);
+
+    if (!play) {
+      alert("Cell already taken!");
+    }
+    console.log(`${row}X${column} clicked.`);
+  }
+
+  const addCellListeners = () => {
+    const cellDivs = document.querySelectorAll("#gameBoard > div");
+    cellDivs.forEach((cellDiv) => {
+      cellDiv.addEventListener("click", handleCellClick);
+    });
+  };
+
+  return { renderBoard };
+})();
+
+DisplayController.renderBoard();
