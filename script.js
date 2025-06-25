@@ -14,7 +14,7 @@ const Gameboard = (function () {
     if (board[row][column] !== "") {
       return false;
     } else {
-      board[row][column] = marker; //row and column are number of index
+      board[row][column] = marker;
       return true;
     }
   };
@@ -52,11 +52,11 @@ const GameController = (function () {
   };
 
   const playRound = (row, column) => {
-    console.log(`${currentPlayer.name}'s turn.`);
     if (!isGameOver) {
+      console.log(`${currentPlayer.name} has just played. next...`);
       const marked = Gameboard.placeMarker(row, column, currentPlayer.marker);
       if (marked) {
-        const win = checkForWin(currentPlayer);
+        const win = checkForWin();
         const tie = checkForTie();
         if (win) {
           isGameOver = true;
@@ -73,7 +73,7 @@ const GameController = (function () {
     }
   };
 
-  const checkForWin = (currentPlayer) => {
+  const checkForWin = () => {
     const board = Gameboard.getBoard();
     const marker = currentPlayer.marker;
 
