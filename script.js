@@ -50,43 +50,65 @@ const GameController = (function () {
     Gameboard.resetTheBoard();
     currentPlayer = player1;
     isGameOver = false;
-    // DisplayController.displayMessage(
-    //   `${currentPlayer.name} will start the game with '${currentPlayer.marker}' symbol.`
-    // );
+    DisplayController.displayMessage("turn", currentPlayer);
+    DisplayController.enableBoard();
   };
+
+  const getCurrentPlayer = () => currentPlayer;
 
   const switchTurn = () => {
     currentPlayer = currentPlayer === player1 ? player2 : player1;
   };
 
   const playRound = (row, column) => {
-    let isValidMove = true;
-    if (!isGameOver) {
-      console.log(`${currentPlayer.name} just played. next...`);
-      const marked = Gameboard.placeMarker(row, column, currentPlayer.marker);
-      DisplayController.renderBoard();
-      if (marked) {
-        const win = checkForWin();
-        const tie = checkForTie();
-        if (win) {
-          isGameOver = true;
-          DisplayController.displayMessage(win, currentPlayer);
-          console.log(win);
-        } else if (tie) {
-          isGameOver = true;
-          DisplayController.displayMessage(tie, currentPlayer);
-          console.log(tie);
-        } else {
-          switchTurn();
-          DisplayController.displayMessage("turn", currentPlayer);
-        }
-      } else {
-        isValidMove = false;
-        console.log(`${row}X${column} cell already occupied.`);
-      }
+    const outcome = {
+      success: false,
+      isGameOver: false,
+      message: "",
+      currentPlayer: currentPlayer,
+    };
+
+    if (isGameOver) {
+      outcome.message =
+        "Game is already over! Click 'Start New Game' to play again.";
+      outcome.isGameOver = true;
+      return outcome;
     }
 
-    return isValidMove;
+    const marked = Gameboard.placeMarker(row, column, currentPlayer.marker);
+    DisplayController.renderBoard();
+
+    if (marked) {
+      outcome.success = true;
+      const winMessage = checkForWin();
+      const tieMessage = checkForTie();
+
+      if (winMessage) {
+        isGameOver = true;
+        outcome.isGameOver = true;
+        outcome.message = winMessage;
+        console.log(winMessage);
+      } else if (tieMessage) {
+        isGameOver = true;
+        outcome.isGameOver = true;
+        outcome.message = tieMessage;
+        console.log(tieMessage);
+      } else {
+        switchTurn();
+        outcome.message = "turn";
+        outcome.currentPlayer = currentPlayer;
+      }
+    } else {
+      outcome.success = false; // Marker not placed
+      outcome.message = "Cell already occupied!";
+      console.log(`${row}X${column} cell already occupied.`);
+    }
+
+    if (outcome.isGameOver) {
+      DisplayController.disableBoard();
+    }
+
+    return outcome;
   };
 
   const checkForWin = () => {
@@ -146,12 +168,14 @@ const GameController = (function () {
       }
     }
 
-    if (allCellsFilled) {
+    if (allCellsFilled && !checkForWin()) {
       return "TIE! All cells are filled.";
     }
+
+    return false;
   };
 
-  return { startGame, playRound, setPlayersNames };
+  return { startGame, playRound, setPlayersNames, getCurrentPlayer };
 })();
 
 const DisplayController = (function () {
@@ -173,7 +197,6 @@ const DisplayController = (function () {
   };
 
   const handleBoardClick = (evt) => {
-    // Check if the clicked element is one of our game cells (has data-row and data-column)
     const clickedCell = evt.target;
     if (
       clickedCell.dataset.row !== undefined &&
@@ -182,10 +205,15 @@ const DisplayController = (function () {
       const row = parseInt(clickedCell.dataset.row);
       const column = parseInt(clickedCell.dataset.column);
 
-      const played = GameController.playRound(row, column);
+      const outcome = GameController.playRound(row, column);
+      renderBoard();
 
-      if (!played) {
-        displayMessage("invalid-move"); // Display message for invalid move
+      if (outcome.isGameOver) {
+        displayMessage(outcome.message);
+      } else if (!outcome.success) {
+        displayMessage("invalid-move");
+      } else {
+        displayMessage("turn", outcome.currentPlayer);
       }
 
       console.log(`${row}X${column} clicked.`);
@@ -194,19 +222,27 @@ const DisplayController = (function () {
 
   boardContainer.addEventListener("click", handleBoardClick);
 
+  const disableBoard = () => {
+    boardContainer.classList.add("game-over");
+  };
+
+  const enableBoard = () => {
+    boardContainer.classList.remove("game-over");
+  };
+
   const displayMessage = (messageType, currentPlayer = null) => {
     if (messageDiv) {
       if (messageType === "turn" && currentPlayer) {
         messageDiv.textContent = `${currentPlayer.name}'s turn.`;
       } else if (messageType === "invalid-move") {
-        messageDiv.textContent = `Cell already taken or game is over!`;
+        messageDiv.textContent = `That spot is taken!`;
       } else {
-        messageDiv.textContent = messageType; // For win/tie messages
+        messageDiv.textContent = messageType;
       }
     }
   };
 
-  return { renderBoard, displayMessage };
+  return { renderBoard, displayMessage, disableBoard, enableBoard };
 })();
 
 const startBtn = document.querySelector("#startGame");
@@ -220,4 +256,4 @@ startBtn.addEventListener("click", () => {
   GameController.startGame();
   DisplayController.renderBoard();
 });
-// DisplayController.renderBoard(); // hides board, so board only shown after 'start game' button clicked.
+// DisplayController.renderBoard(); // hides board. so the board only shown after 'start game' button clicked.
