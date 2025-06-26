@@ -19,13 +19,11 @@ const Gameboard = (function () {
     }
   };
 
-  const getCellValue = (row, column) => board[row][column];
-
   const resetTheBoard = () => {
     board = board.map((row) => row.map(() => ""));
   };
 
-  return { getBoard, placeMarker, getCellValue, resetTheBoard };
+  return { getBoard, placeMarker, resetTheBoard };
 })();
 
 function Player(name, marker) {
@@ -50,7 +48,10 @@ const GameController = (function () {
     Gameboard.resetTheBoard();
     currentPlayer = player1;
     isGameOver = false;
-    DisplayController.displayMessage("turn", currentPlayer);
+    DisplayController.displayMessage(
+      `${currentPlayer.name} will start the game with '${currentPlayer.marker}' symbol.`,
+      currentPlayer
+    );
     DisplayController.enableBoard();
   };
 
@@ -87,21 +88,18 @@ const GameController = (function () {
         isGameOver = true;
         outcome.isGameOver = true;
         outcome.message = winMessage;
-        console.log(winMessage);
       } else if (tieMessage) {
         isGameOver = true;
         outcome.isGameOver = true;
         outcome.message = tieMessage;
-        console.log(tieMessage);
       } else {
         switchTurn();
         outcome.message = "turn";
         outcome.currentPlayer = currentPlayer;
       }
     } else {
-      outcome.success = false; // Marker not placed
+      outcome.success = false;
       outcome.message = "Cell already occupied!";
-      console.log(`${row}X${column} cell already occupied.`);
     }
 
     if (outcome.isGameOver) {
@@ -215,8 +213,6 @@ const DisplayController = (function () {
       } else {
         displayMessage("turn", outcome.currentPlayer);
       }
-
-      console.log(`${row}X${column} clicked.`);
     }
   };
 
@@ -255,5 +251,7 @@ startBtn.addEventListener("click", () => {
   GameController.setPlayersNames(player1InputName, player2InputName);
   GameController.startGame();
   DisplayController.renderBoard();
+
+  player1InputName.value = "";
+  player2InputName.value = "";
 });
-// DisplayController.renderBoard(); // hides board. so the board only shown after 'start game' button clicked.
